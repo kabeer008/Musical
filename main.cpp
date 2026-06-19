@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <stdexcept>
 
 #include <assert.h>
 
@@ -58,6 +60,20 @@ int whiteKeysBefore(const std::vector<Key>& keys, std::size_t index)
 }
 // incorporated inline effectively and optimally
 
+void drawButton(sf::RenderWindow& window, const Button& button, const sf::Font& font) {
+    sf::RectangleShape rect({button.area.size.x, button.area.size.y});
+    rect.setPosition(button.area.position);
+    rect.setFillColor(sf::Color(48, 56, 66));
+    rect.setOutlineThickness(1.f);
+    rect.setOutlineColor(sf::Color(95, 105, 118));
+    window.draw(rect);
+
+    sf::Text text(font, button.label, 18);
+    text.setPosition({button.area.position.x + 16.f, button.area.position.y + 6.f});
+    text.setFillColor(sf::Color(235, 238, 242));
+    window.draw(text);
+};
+
 void setPianoVolume(const std::vector<sf::SoundBuffer>& originalBuffers,
                     std::vector<sf::SoundBuffer>& buffers,
                     std::vector<sf::Sound>& sounds,
@@ -94,6 +110,29 @@ void setPianoVolume(const std::vector<sf::SoundBuffer>& originalBuffers,
 
 int main()
 {
+    std::unordered_map<sf::Keyboard::Key, std::size_t> table =
+    {
+        {sf::Keyboard::Key::Num1, 0},  {sf::Keyboard::Key::Num2, 1},
+        {sf::Keyboard::Key::Num3, 2},  {sf::Keyboard::Key::Num4, 3},
+        {sf::Keyboard::Key::Num5, 4},  {sf::Keyboard::Key::Num6, 5},
+        {sf::Keyboard::Key::Num7, 6},   { sf::Keyboard::Key::Num8, 7},
+        {sf::Keyboard::Key::Num9, 8},   { sf::Keyboard::Key::Num0, 9},
+        {sf::Keyboard::Key::Q, 10},      { sf::Keyboard::Key::W, 11},
+        {sf::Keyboard::Key::E, 12},     {sf::Keyboard::Key::R, 13},
+        {sf::Keyboard::Key::T, 14},     {sf::Keyboard::Key::Y, 15},
+        {sf::Keyboard::Key::U, 16},     {sf::Keyboard::Key::I, 17},
+        {sf::Keyboard::Key::O, 18},      { sf::Keyboard::Key::P, 19},
+        {sf::Keyboard::Key::A, 20},      { sf::Keyboard::Key::S, 21},
+        {sf::Keyboard::Key::D, 22},      { sf::Keyboard::Key::F, 23},
+        {sf::Keyboard::Key::G, 24},     {sf::Keyboard::Key::H, 25},
+        {sf::Keyboard::Key::J, 26},     {sf::Keyboard::Key::K, 27},
+        {sf::Keyboard::Key::L, 28},     {sf::Keyboard::Key::Semicolon, 29},
+        {sf::Keyboard::Key::Z, 30},      { sf::Keyboard::Key::X, 31},
+        {sf::Keyboard::Key::C, 32},      { sf::Keyboard::Key::V, 33},
+        {sf::Keyboard::Key::B, 34},      { sf::Keyboard::Key::N, 35},
+        {sf::Keyboard::Key::M, 36},     {sf::Keyboard::Key::Comma, 37},
+        {sf::Keyboard::Key::Period, 38},{sf::Keyboard::Key::Slash, 39}
+    };
     std::vector<Key> keys = {
         {"C3_", sf::Keyboard::Key::Num1, false},  {"Db3", sf::Keyboard::Key::Num2, true},
         {"D3_", sf::Keyboard::Key::Num3, false},  {"Eb3", sf::Keyboard::Key::Num4, true},
@@ -165,21 +204,30 @@ int main()
                     window.close();
                 }
 
-                for (std::size_t i = 0; i < keys.size(); ++i) {
-                    if (keyPressed->code == keys[i].button) {
-                        keys[i].pressed = true;
-                        sounds[i].stop();
-                        sounds[i].play();
-                    }
+                // for (std::size_t i = 0; i < keys.size(); ++i) { // no need to iterate, use unordered map for O(1)
+                
+                std::size_t idx = -1;
+                try { idx = table.at(keyPressed->code); }
+                catch(const std::exception& e) {}
+                
+                if (idx >= 0 && idx < keys.size()) {
+                    keys[idx].pressed = true;
+                    // sounds[i].stop();
+                    sounds[idx].play();
                 }
+                // }
             }
 
             if (const auto* keyReleased = event->getIf<sf::Event::KeyReleased>()) {
-                for (std::size_t i = 0; i < keys.size(); ++i) {
-                    if (keyReleased->code == keys[i].button) {
-                        keys[i].pressed = false;
-                    }
+                // for (std::size_t i = 0; i < keys.size(); ++i) { // no need, used map for O(1)
+                std::size_t idx = -1;
+                try { idx = table.at(keyReleased->code); }
+                catch(const std::exception& e) {}
+
+                if (idx >= 0 && idx < keys.size()) {
+                    keys[idx].pressed = false;
                 }
+                // }
             }
 
             if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
@@ -211,23 +259,9 @@ int main()
         base.setFillColor(sf::Color(18, 20, 24));
         window.draw(base);
 
-        auto drawButton = [&](const Button& button) {
-            sf::RectangleShape rect({button.area.size.x, button.area.size.y});
-            rect.setPosition(button.area.position);
-            rect.setFillColor(sf::Color(48, 56, 66));
-            rect.setOutlineThickness(1.f);
-            rect.setOutlineColor(sf::Color(95, 105, 118));
-            window.draw(rect);
-
-            sf::Text text(font, button.label, 18);
-            text.setPosition({button.area.position.x + 16.f, button.area.position.y + 6.f});
-            text.setFillColor(sf::Color(235, 238, 242));
-            window.draw(text);
-        };
-
-        drawButton(volumeDown);
-        drawButton(volumeUp);
-        drawButton(quitButton);
+        drawButton(window, volumeDown, font);
+        drawButton(window, volumeUp, font);
+        drawButton(window, quitButton, font);
 
         sf::Text volumeText(font, "Volume: " + std::to_string(static_cast<int>(volume)), 18);
         volumeText.setPosition({154.f, 24.f});
