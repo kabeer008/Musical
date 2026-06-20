@@ -206,11 +206,12 @@ int main()
 
                 // for (std::size_t i = 0; i < keys.size(); ++i) { // no need to iterate, use unordered map for O(1)
                 
-                std::size_t idx = -1;
-                try { idx = table.at(keyPressed->code); }
-                catch(const std::exception& e) {}
+                auto iter = table.find(keyPressed->code);
                 
-                if (idx >= 0 && idx < keys.size()) {
+                if (iter != table.end()) 
+                {
+                    register std::size_t idx = iter->second;
+                    assert(idx >= 0 && idx < keys.size());
                     keys[idx].pressed = true;
                     // sounds[i].stop();
                     sounds[idx].play();
@@ -220,11 +221,12 @@ int main()
 
             if (const auto* keyReleased = event->getIf<sf::Event::KeyReleased>()) {
                 // for (std::size_t i = 0; i < keys.size(); ++i) { // no need, used map for O(1)
-                std::size_t idx = -1;
-                try { idx = table.at(keyReleased->code); }
-                catch(const std::exception& e) {}
+                auto iter = table.find(keyReleased->code);
 
-                if (idx >= 0 && idx < keys.size()) {
+                if (iter != table.end()) 
+                {
+                    register std::size_t idx = iter->second;
+                    assert(idx >= 0 && idx < keys.size());
                     keys[idx].pressed = false;
                 }
                 // }
